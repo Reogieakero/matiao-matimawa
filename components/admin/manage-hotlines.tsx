@@ -1,7 +1,5 @@
 "use client"
 
-import type React from "react"
-
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,6 +12,18 @@ import { useToast } from "@/hooks/use-toast"
 import type { Hotline, HotlineCategory } from "@/lib/types"
 import { addActivityLog } from "@/lib/activity-log"
 
+// Confirmation Dialog imports
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 const categories: HotlineCategory[] = ["Fire", "Police", "Army", "Medical", "Disaster Response", "Other"]
 
 export function ManageHotlines() {
@@ -21,6 +31,8 @@ export function ManageHotlines() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<Hotline | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -42,6 +54,7 @@ export function ManageHotlines() {
       setHotlines(data)
     } catch (error) {
       console.error("[v0] Failed to fetch hotlines:", error)
+      toast({ title: "Error", description: "Failed to load hotlines", variant: "destructive" })
     } finally {
       setLoading(false)
     }
@@ -74,11 +87,7 @@ export function ManageHotlines() {
         fetchHotlines()
       }
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to save hotline",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to save hotline", variant: "destructive" })
     }
   }
 
@@ -94,25 +103,29 @@ export function ManageHotlines() {
     setShowForm(true)
   }
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm("Are you sure you want to delete this hotline?")) return
+  const handleConfirmDelete = async () => {
+    if (!deleting) return
+    setIsDeleting(true)
 
     try {
-      const response = await fetch(`/api/hotlines?id=${id}`, { method: "DELETE" })
-      if (response.ok) {
-        toast({
-          title: "Hotline Deleted",
-          description: "Hotline removed successfully",
-        })
-        addActivityLog("DELETE_HOTLINE", `Deleted hotline: ${name}`)
-        fetchHotlines()
-      }
+      const response = await fetch(`/api/hotlines?id=${deleting.id}`, { method: "DELETE" })
+      if (!response.ok) throw new Error("Failed to delete hotline")
+
+      toast({
+        title: "Hotline Deleted",
+        description: `${deleting.name} has been successfully removed.`,
+      })
+      addActivityLog("DELETE_HOTLINE", `Deleted hotline: ${deleting.name}`)
+      setHotlines(hotlines.filter((h) => h.id !== deleting.id))
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to delete hotline",
         variant: "destructive",
       })
+    } finally {
+      setIsDeleting(false)
+      setDeleting(null)
     }
   }
 
@@ -149,6 +162,7 @@ export function ManageHotlines() {
         </Button>
       </div>
 
+      {/* Hotline Form */}
       {showForm && (
         <Card>
           <CardHeader>
@@ -159,33 +173,20 @@ export function ManageHotlines() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
+                  <Input id="name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="department">Department</Label>
-                  <Input
-                    id="department"
-                    value={formData.department}
-                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                    required
-                  />
+                  <Input id="department" value={formData.department} onChange={(e) => setFormData({ ...formData, department: e.target.value })} required />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="category">Category</Label>
-                <Select
-                  value={formData.category}
-                  onValueChange={(value) => setFormData({ ...formData, category: value as HotlineCategory })}
-                >
+                <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value as HotlineCategory })}>
                   <SelectTrigger id="category">
-                    <SelectValue />
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((cat) => (
@@ -199,23 +200,12 @@ export function ManageHotlines() {
 
               <div className="space-y-2">
                 <Label htmlFor="number">Phone Number</Label>
-                <Input
-                  id="number"
-                  type="tel"
-                  value={formData.number}
-                  onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                  required
-                />
+                <Input id="number" type="tel" value={formData.number} onChange={(e) => setFormData({ ...formData, number: e.target.value })} required />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">Description (Optional)</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                />
+                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
               </div>
 
               <div className="flex gap-2">
@@ -229,6 +219,31 @@ export function ManageHotlines() {
         </Card>
       )}
 
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. It will permanently delete the hotline{" "}
+              <span className="font-semibold text-primary">{deleting?.name}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90 text-white"
+            >
+              {isDeleting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Trash2 className="h-4 w-4 mr-2" />}
+              {isDeleting ? "Deleting..." : "Delete Hotline"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Hotline List */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {hotlines.map((hotline) => (
           <Card key={hotline.id} className="hover:shadow-lg transition-shadow">
@@ -239,8 +254,8 @@ export function ManageHotlines() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg mb-1 line-clamp-1">{hotline.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mb-2">{hotline.department}</p>
-                  {hotline.category && <p className="text-xs font-medium text-primary mb-2">{hotline.category}</p>}
+                  <p className="text-sm text-muted-foreground mb-1">{hotline.department}</p>
+                  {hotline.category && <p className="text-xs font-medium text-primary mb-1">{hotline.category}</p>}
                   <p className="text-lg font-semibold text-primary">{hotline.number}</p>
                   {hotline.description && (
                     <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{hotline.description}</p>
@@ -251,17 +266,10 @@ export function ManageHotlines() {
             <CardContent className="pt-0">
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => handleEdit(hotline)} className="flex-1">
-                  <Edit className="h-4 w-4 mr-1" />
-                  Edit
+                  <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDelete(hotline.id, hotline.name)}
-                  className="flex-1"
-                >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
+                <Button size="sm" variant="destructive" onClick={() => setDeleting(hotline)} className="flex-1">
+                  <Trash2 className="h-4 w-4 mr-1" /> Delete
                 </Button>
               </div>
             </CardContent>
