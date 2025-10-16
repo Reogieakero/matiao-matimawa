@@ -10,7 +10,6 @@ import "./globals.css"
 export const metadata: Metadata = {
   title: "Barangay Matiao - Community Portal",
   description: "Official online portal for Barangay Matiao",
-  generator: "v0.app",
 }
 
 export default function RootLayout({
@@ -22,7 +21,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}>
         <Suspense fallback={null}>
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             {children}
           </ThemeProvider>
         </Suspense>
