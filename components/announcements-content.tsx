@@ -11,6 +11,34 @@ import { useRealtime } from "@/hooks/use-realtime"
 import { AnnouncementDetailModal } from "./announcement-detail-modal"
 import Image from "next/image"
 
+// Import Framer Motion
+import { motion } from "framer-motion"
+
+// --- Animation Variants ---
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05, // Subtle stagger delay between cards
+    },
+  },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut",
+    },
+  },
+}
+// --------------------------
+
+
 const categories: AnnouncementCategory[] = [
   "General",
   "Health",
@@ -37,6 +65,7 @@ export function AnnouncementsContent() {
   const [selectedAnnouncement, setSelectedAnnouncement] = useState<Announcement | null>(null)
   const [modalOpen, setModalOpen] = useState(false)
 
+  // Fetch announcements on mount
   useEffect(() => {
     fetchAnnouncements()
   }, [])
@@ -45,7 +74,9 @@ export function AnnouncementsContent() {
     try {
       const response = await fetch("/api/announcements")
       const data = await response.json()
-      setAnnouncements(data)
+      // Sort by date to show latest first (assuming 'date' is a sortable field)
+      const sortedData = data.sort((a: Announcement, b: Announcement) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      setAnnouncements(sortedData)
     } catch (error) {
       console.error("[v0] Failed to fetch announcements:", error)
     } finally {
@@ -61,6 +92,7 @@ export function AnnouncementsContent() {
     },
   })
 
+  // Filter logic
   const filteredAnnouncements = announcements.filter((announcement) => {
     const matchesSearch =
       announcement.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -106,7 +138,12 @@ export function AnnouncementsContent() {
   return (
     <div className="container mx-auto px-4 py-12">
       {/* Search and Filter */}
-      <div className="mb-8 space-y-4">
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.5 }}
+        className="mb-8 space-y-4"
+      >
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -136,60 +173,81 @@ export function AnnouncementsContent() {
             </Button>
           ))}
         </div>
-      </div>
+      </motion.div>
 
-      {/* Announcements Grid */}
+      {/* Announcements Grid - Animate the grid container */}
       {filteredAnnouncements.length === 0 ? (
-        <div className="text-center py-12">
+        <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          className="text-center py-12"
+        >
           <p className="text-muted-foreground text-lg">No announcements found</p>
-        </div>
+        </motion.div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          variants={containerVariants}
+          initial="hidden"
+          // We use `key` change on the parent motion.div to trigger re-animation on filter/search
+          // The key should represent the current filter state
+          animate="visible"
+          key={selectedCategory + searchQuery} 
+        >
           {filteredAnnouncements.map((announcement) => (
-            <Card key={announcement.id} className="hover:shadow-lg transition-shadow flex flex-col">
-              {announcement.posterUrl && (
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={announcement.posterUrl || "/placeholder.svg"}
-                    alt={announcement.title}
-                    fill
-                    className="object-cover rounded-t-lg"
-                  />
-                </div>
-              )}
-              <CardHeader className="flex-1">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <Badge className={categoryColors[announcement.category]}>{announcement.category}</Badge>
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {new Date(announcement.date).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+            // Animate each individual card
+            <motion.div 
+              key={announcement.id} 
+              variants={cardVariants}
+              // Add whileHover for a professional, interactive touch
+              whileHover={{ scale: 1.02, boxShadow: "0 10px 15px rgba(0, 0, 0, 0.1)" }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              <Card className="h-full hover:border-primary/50 transition-colors flex flex-col overflow-hidden">
+                {announcement.posterUrl && (
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src={announcement.posterUrl || "/placeholder.svg"}
+                      alt={announcement.title}
+                      fill
+                      className="object-cover" // Removed rounded-t-lg since Card has overall rounded corners
+                    />
                   </div>
-                </div>
-                <CardTitle className="text-xl">{announcement.title}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <CardDescription className="text-sm leading-relaxed">
-                  {truncateContent(announcement.content)}
-                </CardDescription>
-                {announcement.content.length > 150 && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full bg-transparent"
-                    onClick={() => handleReadMore(announcement)}
-                  >
-                    Read More
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
                 )}
-              </CardContent>
-            </Card>
+                <CardHeader className="flex-1 space-y-3 p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge className={categoryColors[announcement.category]}>{announcement.category}</Badge>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                      <Calendar className="h-3 w-3" />
+                      {new Date(announcement.date).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </div>
+                  </div>
+                  <CardTitle className="text-xl leading-snug">{announcement.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4 pt-0 p-5">
+                  <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+                    {truncateContent(announcement.content)}
+                  </CardDescription>
+                  {(announcement.content.length > 150 || announcement.posterUrl) && ( // Ensure the button is always at the bottom if truncated or if there is an image
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full justify-start text-primary hover:bg-primary/10"
+                      onClick={() => handleReadMore(announcement)}
+                    >
+                      Read More
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       <AnnouncementDetailModal announcement={selectedAnnouncement} open={modalOpen} onOpenChange={setModalOpen} />
