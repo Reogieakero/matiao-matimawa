@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,10 +49,8 @@ export function ManageAnnouncements() {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [filterCategory, setFilterCategory] = useState<AnnouncementCategory | "All">("All")
-
   const [deleting, setDeleting] = useState<Announcement | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-
   const { toast } = useToast()
 
   const [formData, setFormData] = useState({
@@ -61,7 +60,6 @@ export function ManageAnnouncements() {
     date: new Date().toISOString().split("T")[0],
     posterUrl: "",
   })
-  const [posterFile, setPosterFile] = useState<File | null>(null)
   const [posterPreview, setPosterPreview] = useState("")
   const [isDragging, setIsDragging] = useState(false)
 
@@ -113,7 +111,6 @@ export function ManageAnnouncements() {
       posterUrl: a.posterUrl || "",
     })
     setPosterPreview(a.posterUrl || "")
-    setPosterFile(null)
     setEditingId(a.id)
     setShowForm(true)
   }
@@ -157,7 +154,6 @@ export function ManageAnnouncements() {
       date: new Date().toISOString().split("T")[0],
       posterUrl: "",
     })
-    setPosterFile(null)
     setPosterPreview("")
     setEditingId(null)
     setShowForm(false)
@@ -167,93 +163,125 @@ export function ManageAnnouncements() {
 
   if (loading)
     return (
-      <div className="flex justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="flex justify-center py-20">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Manage Announcements</h2>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <h2 className="text-3xl font-semibold text-primary">Manage Announcements</h2>
           <p className="text-muted-foreground">Create, edit, or delete announcements</p>
-        </div>
-        <Button onClick={() => setShowForm(!showForm)}>
-          <Plus className="h-4 w-4 mr-2" /> New Announcement
-        </Button>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.05 }}>
+          <Button onClick={() => setShowForm(!showForm)} className="shadow-md">
+            <Plus className="h-4 w-4 mr-2" /> {showForm ? "Close Form" : "New Announcement"}
+          </Button>
+        </motion.div>
       </div>
 
-      {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit Announcement" : "Create New Announcement"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Label>Title</Label>
-              <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
-              <Label>Category</Label>
-              <Select
-                value={formData.category}
-                onValueChange={(v) => setFormData({ ...formData, category: v as AnnouncementCategory })}
-                required
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Label>Date</Label>
-              <Input type="date" value={formData.date} onChange={(e) => setFormData({ ...formData, date: e.target.value })} />
-              <Label>Content</Label>
-              <Textarea value={formData.content} onChange={(e) => setFormData({ ...formData, content: e.target.value })} rows={4} />
-              <Label>Poster Image (Optional)</Label>
-              {posterPreview ? (
-                <div className="relative h-56 border rounded-lg overflow-hidden">
-                  <Image src={posterPreview} alt="Poster" fill className="object-cover" />
-                  <Button size="icon" variant="destructive" className="absolute top-2 right-2" onClick={() => setPosterPreview("")}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
-                    isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
-                  }`}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    setIsDragging(true)
-                  }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    setIsDragging(false)
-                    const file = e.dataTransfer.files[0]
-                    if (file) handleFileChange(file)
-                  }}
-                >
-                  <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-2">Drag & drop an image or click below</p>
-                  <Input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} />
-                </div>
-              )}
-              <div className="flex gap-2">
-                <Button type="submit">{editingId ? "Update" : "Create"}</Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+      <AnimatePresence>
+        {showForm && (
+          <motion.div
+            key="form"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="shadow-lg border border-gray-200">
+              <CardHeader>
+                <CardTitle>{editingId ? "Edit Announcement" : "Create New Announcement"}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Title</Label>
+                      <Input value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} required />
+                    </div>
+                    <div>
+                      <Label>Category</Label>
+                      <Select
+                        value={formData.category}
+                        onValueChange={(v) => setFormData({ ...formData, category: v as AnnouncementCategory })}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat} value={cat}>
+                              {cat}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Label>Content</Label>
+                  <Textarea
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    rows={4}
+                    className="resize-none"
+                  />
+
+                  <Label>Poster Image (Optional)</Label>
+                  {posterPreview ? (
+                    <div className="relative h-56 border rounded-lg overflow-hidden">
+                      <Image src={posterPreview} alt="Poster" fill className="object-cover" />
+                      <Button
+                        size="icon"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => setPosterPreview("")}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
+                        isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
+                      }`}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setIsDragging(true)
+                      }}
+                      onDragLeave={() => setIsDragging(false)}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        setIsDragging(false)
+                        const file = e.dataTransfer.files[0]
+                        if (file) handleFileChange(file)
+                      }}
+                    >
+                      <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-sm text-muted-foreground mb-2">Drag & drop an image or click below</p>
+                      <Input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])} />
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 justify-end pt-4">
+                    <Button type="button" variant="outline" onClick={resetForm}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" className="shadow-sm">
+                      {editingId ? "Update" : "Create"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Confirmation Dialog */}
       <AlertDialog open={!!deleting} onOpenChange={() => setDeleting(null)}>
@@ -274,33 +302,61 @@ export function ManageAnnouncements() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <motion.div
+        layout
+        className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+        transition={{ layout: { duration: 0.3 } }}
+      >
         {filtered.map((a) => (
-          <Card key={a.id} className="flex flex-col">
-            {a.posterUrl && (
-              <div className="relative h-48 w-full">
-                <Image src={a.posterUrl} alt={a.title} fill className="object-cover rounded-t-lg" />
-              </div>
-            )}
-            <CardHeader className="flex-1">
-              <Badge className={categoryColors[a.category]}>{a.category}</Badge>
-              <CardTitle className="mt-2">{a.title}</CardTitle>
-              <CardDescription>{a.content}</CardDescription>
-              <p className="text-xs text-muted-foreground mt-2">Date: {new Date(a.date).toLocaleDateString()}</p>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => handleEdit(a)} className="flex-1">
-                  <Edit className="h-4 w-4 mr-1" /> Edit
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => setDeleting(a)} className="flex-1">
-                  <Trash2 className="h-4 w-4 mr-1" /> Delete
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <motion.div
+            key={a.id}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            whileHover={{ scale: 1.02 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Card className="flex flex-col overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300">
+              {a.posterUrl && (
+                <div className="relative h-44 w-full">
+                  <Image src={a.posterUrl} alt={a.title} fill className="object-cover rounded-t-lg" />
+                </div>
+              )}
+              <CardHeader className="flex-1 space-y-2">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Badge className={`${categoryColors[a.category]} px-3 py-1`}>{a.category}</Badge>
+                </motion.div>
+                <CardTitle className="text-lg font-semibold mt-1">{a.title}</CardTitle>
+                <CardDescription className="line-clamp-3 text-sm text-muted-foreground">{a.content}</CardDescription>
+                <p className="text-xs text-muted-foreground mt-2">📅 {new Date(a.date).toLocaleDateString()}</p>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEdit(a)}
+                    className="flex-1 hover:bg-blue-50 transition"
+                  >
+                    <Edit className="h-4 w-4 mr-1" /> Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setDeleting(a)}
+                    className="flex-1"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" /> Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   )
 }

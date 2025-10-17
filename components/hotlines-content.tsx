@@ -69,8 +69,7 @@ export function HotlinesContent() {
     const filteredHotlines = hotlines.filter((hotline: Hotline) => {
         if (selectedCategory === "All") return true
         
-        // 🚀 ROBUST FILTERING: Standardize both strings to lowercase and trim whitespace
-        // This ensures the filter works even with minor case/spacing mismatches in data.
+        // ROBUST FILTERING: Standardize both strings to lowercase and trim whitespace
         const hotlineCategory = (hotline.category || "Other").toLowerCase().trim();
         const selected = selectedCategory.toLowerCase().trim();
 
@@ -141,8 +140,8 @@ export function HotlinesContent() {
                         <Card 
                             key={hotline.id} 
                             className="hover:shadow-xl transition-shadow 
-                                       animate-in fade-in-0 slide-in-from-bottom-2 duration-500" // OUTSTANDING ANIMATION
-                            style={{ animationDelay: `${index * 100}ms` }} // STAGGERED DELAY
+                                       animate-in fade-in-0 slide-in-from-bottom-2 duration-500" 
+                            style={{ animationDelay: `${index * 100}ms` }} 
                         >
                             <CardHeader>
                                 <div className="flex items-start gap-4">
@@ -159,12 +158,26 @@ export function HotlinesContent() {
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 {hotline.description && <p className="text-sm text-muted-foreground">{hotline.description}</p>}
-                                <Button asChild className="w-full" size="lg">
-                                    <a href={`tel:${hotline.number}`}>
-                                        <Phone className="h-4 w-4 mr-2" />
-                                        {hotline.number}
-                                    </a>
+                                
+                                {/* 🎯 MODIFIED BUTTON: Removed anchor tag and 'asChild' to prevent calling */}
+                                <Button 
+                                    className="w-full pointer-events-none" // 🛑 Use pointer-events-none for visual disability without 'disabled' style
+                                    size="lg"
+                                    variant="secondary" // Optionally change variant to signal it's non-interactive
+                                >
+                                    <Phone className="h-4 w-4 mr-2" />
+                                    {hotline.number}
                                 </Button>
+                                {/* // Alternatively, use the 'disabled' prop for a more explicit disabled look:
+                                <Button 
+                                    className="w-full" 
+                                    size="lg"
+                                    disabled // This clearly indicates it's unclickable
+                                >
+                                    <Phone className="h-4 w-4 mr-2" />
+                                    {hotline.number}
+                                </Button>
+                                */}
                             </CardContent>
                         </Card>
                     ))}
@@ -173,7 +186,7 @@ export function HotlinesContent() {
                 {filteredHotlines.length === 0 && (
                     <div className="text-center py-12 text-muted-foreground animate-in fade-in-0 duration-500">
                         <AlertTriangle className="h-12 w-12 mx-auto mb-4" />
-                        <p>No hotlines found for the selected category: **{selectedCategory}**.</p>
+                        <p>No hotlines found for the selected category: {selectedCategory}.</p>
                     </div>
                 )}
             </div>

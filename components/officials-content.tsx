@@ -1,20 +1,20 @@
 // components/officials-content.tsx
 "use client"
 
-import { useState, useEffect, useCallback } from "react" // Added useCallback
+import { useState, useEffect, useCallback } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Phone, User } from "lucide-react"
-// Assuming your types file exists:
-import type { Official, OfficialStatus, OfficialCategory } from "@/lib/types" 
-import { useRealtime } from "@/hooks/use-realtime"
 import Image from "next/image"
+import { useRealtime } from "@/hooks/use-realtime"
+import type { Official, OfficialStatus, OfficialCategory } from "@/lib/types"
 
 const statusColors: Record<OfficialStatus, string> = {
-  "On Duty": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  "On Leave": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  "On Site": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+  "On Duty": "bg-green-100 text-green-800",
+  "On Leave": "bg-orange-100 text-orange-800",
+  "On Site": "bg-blue-100 text-blue-800",
 }
 
 const officialCategories: OfficialCategory[] = ["Barangay Officials", "SK", "Staff"]
@@ -23,7 +23,7 @@ export function OfficialsContent() {
   const [officials, setOfficials] = useState<Official[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetchOfficials = useCallback(async () => { // Wrapped in useCallback
+  const fetchOfficials = useCallback(async () => {
     try {
       const response = await fetch("/api/officials")
       const data = await response.json()
@@ -33,13 +33,12 @@ export function OfficialsContent() {
     } finally {
       setLoading(false)
     }
-  }, []) // Empty dependency array for fetchOfficials
+  }, [])
 
   useEffect(() => {
     fetchOfficials()
   }, [fetchOfficials])
 
-  // FIX: Removed the 'data' argument to match the useRealtime hook signature
   useRealtime({
     eventTypes: ["official:updated"],
     onUpdate: () => {
@@ -48,11 +47,11 @@ export function OfficialsContent() {
     },
   })
 
-  // FIX: Added explicit types to the reduce callback parameters (acc and category)
   const groupedOfficials = officialCategories.reduce(
     (acc: Record<OfficialCategory, Official[]>, category: OfficialCategory) => {
-      // FIX: Added explicit type to the filter callback parameter (official)
-      acc[category] = officials.filter((official: Official) => official.category === category)
+      acc[category] = officials.filter(
+        (official: Official) => official.category === category,
+      )
       return acc
     },
     {} as Record<OfficialCategory, Official[]>,
@@ -62,7 +61,7 @@ export function OfficialsContent() {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
+          {[...Array(6)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardHeader>
                 <div className="h-16 w-16 bg-muted rounded-full mb-4" />
@@ -80,47 +79,98 @@ export function OfficialsContent() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 space-y-12">
-      {officialCategories.map((category: OfficialCategory) => (
-        <div key={category} className="space-y-6">
-          <h2 className="text-2xl font-bold border-b pb-3">{category}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groupedOfficials[category].map((official: Official) => ( // Added type Official
-              <Card key={official.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start justify-between mb-4">
-                    {official.imageUrl ? (
-                      <div className="relative h-16 w-16 rounded-full overflow-hidden">
-                        <Image
-                          src={official.imageUrl || "/placeholder.svg"}
-                          alt={official.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-                        <User className="h-8 w-8" />
-                      </div>
-                    )}
-                    <Badge className={statusColors[official.status]}>{official.status}</Badge>
-                  </div>
-                  <CardTitle className="text-xl mb-1">{official.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground">{official.position}</p>
-                </CardHeader>
-                <CardContent>
-                  <Button variant="outline" className="w-full bg-transparent" asChild>
-                    <a href={`tel:${official.contact}`}>
-                      <Phone className="h-4 w-4 mr-2" />
-                      {official.contact}
-                    </a>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      ))}
+    <div className="container mx-auto px-4 py-12 space-y-16">
+      <AnimatePresence mode="wait">
+        {officialCategories.map((category, catIndex) => (
+          <motion.div
+            key={category}
+            initial={{ opacity: 0, y: 25 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ delay: catIndex * 0.2, duration: 0.5 }}
+            className="space-y-8"
+          >
+            <div className="text-center">
+              <h2 className="text-3xl font-bold tracking-tight text-primary mb-2">
+                {category}
+              </h2>
+              <p className="text-muted-foreground">
+                Meet the dedicated members serving Barangay Matiao
+              </p>
+            </div>
+
+            <motion.div
+              layout
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              <AnimatePresence>
+                {groupedOfficials[category]?.map((official, index) => (
+                  <motion.div
+                    key={official.id}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      delay: index * 0.1,
+                      duration: 0.4,
+                      ease: "easeOut",
+                    }}
+                    whileHover={{ scale: 1.03 }}
+                  >
+                    <Card className="hover:shadow-xl transition-all duration-300 border border-gray-200 rounded-2xl overflow-hidden">
+                      <CardHeader className="relative">
+                        <div className="flex items-start justify-between mb-3">
+                          {official.imageUrl ? (
+                            <div className="relative h-20 w-20 rounded-full overflow-hidden shadow-md ring-2 ring-primary/20">
+                              <Image
+                                src={official.imageUrl}
+                                alt={official.name}
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 text-primary shadow-md">
+                              <User className="h-10 w-10" />
+                            </div>
+                          )}
+                          <Badge
+                            className={`px-3 py-1 text-xs font-semibold rounded-full ${statusColors[official.status]}`}
+                          >
+                            {official.status}
+                          </Badge>
+                        </div>
+
+                        <div className="mt-2">
+                          <CardTitle className="text-lg font-semibold">
+                            {official.name}
+                          </CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            {official.position}
+                          </p>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent>
+                        <Button
+                          variant="outline"
+                          className="w-full border-primary/20 hover:bg-primary hover:text-white transition-colors cursor-not-allowed"
+                          asChild
+                        >
+                          <a href={`tel:${official.contact}`}>
+                            <Phone className="h-4 w-4 mr-2" />
+                            {official.contact}
+                          </a>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </motion.div>
+        ))}
+      </AnimatePresence>
     </div>
   )
 }
