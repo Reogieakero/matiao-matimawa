@@ -1,140 +1,118 @@
+// components/services-content.tsx
 "use client"
 
 import type React from "react"
-
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FileText, Clock, CheckCircle, XCircle, Loader2, DollarSign, CheckIcon } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs"
+import { FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { DocumentApplication, Document } from "@/lib/types"
 import { useRealtime } from "@/hooks/use-realtime"
+// Import Data and Components
+import { DocumentListCard } from "./document-list-card"
+import { DocumentApplicationForm } from "./document-application-form"
+import { ApplicationStatusCard } from "./application-status-card"
+import {
+  documentsInfo,
+  type DocumentApplication,
+  type DocumentApplicationStatus,
+} from "@/lib/service-data"
 
-const documentTypes = [
-  "Barangay Clearance",
-  "Certificate of Residency",
-  "Certificate of Indigency",
-  "Business Permit",
-  "Community Tax Certificate",
-]
-
-const documentsInfo: Document[] = [
-  {
-    id: "1",
-    name: "Barangay Clearance",
-    description: "Official document certifying your good moral character and residency",
-    requirements: ["Valid ID", "Proof of Residency", "2x2 Photo"],
-    price: 50,
-  },
-  {
-    id: "2",
-    name: "Certificate of Residency",
-    description: "Proof of residence in Barangay Matiao",
-    requirements: ["Valid ID", "Proof of Residency", "Barangay ID"],
-    price: 30,
-  },
-  {
-    id: "3",
-    name: "Certificate of Indigency",
-    description: "Document for indigent individuals for assistance programs",
-    requirements: ["Valid ID", "Proof of Residency", "Income Statement"],
-    price: 0,
-  },
-  {
-    id: "4",
-    name: "Business Permit",
-    description: "Authorization to operate a business in the barangay",
-    requirements: ["Business Registration", "Valid ID", "Proof of Residency", "Business Plan"],
-    price: 200,
-  },
-  {
-    id: "5",
-    name: "Community Tax Certificate",
-    description: "Tax identification document for residents",
-    requirements: ["Valid ID", "Proof of Residency", "Income Statement"],
-    price: 75,
-  },
-]
-
-const statusColors = {
-  Pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  Approved: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  Completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  Rejected: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+// Initial Form State
+const initialFormData = {
+  fullName: "",
+  address: "",
+  contactNumber: "",
+  documentType: "",
+  purpose: "",
 }
 
-const statusIcons = {
-  Pending: Clock,
-  Approved: CheckCircle,
-  Completed: CheckCircle,
-  Rejected: XCircle,
-}
+// Helper component for TabsContent animation
+const AnimatedTabsContent = ({ value, children }: { value: string, children: React.ReactNode }) => (
+    <TabsContent value={value} 
+        // Added fade-in animation to Tab Content switch
+        className="mt-6 animate-in fade-in-0 duration-500">
+      {children}
+    </TabsContent>
+);
 
+// --- Component ---
 export function ServicesContent() {
   const [applications, setApplications] = useState<DocumentApplication[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const { toast } = useToast()
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    address: "",
-    contactNumber: "",
-    documentType: "",
-    purpose: "",
-  })
+  const [formData, setFormData] = useState(initialFormData)
 
-  useEffect(() => {
-    fetchApplications()
-  }, [])
+  const handleFormChange = (key: keyof typeof initialFormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [key]: value }))
+  }
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/applications")
+      // Simulate API delay for a better animation demonstration
+      await new Promise(resolve => setTimeout(resolve, 300)); 
+      // Replace with actual API call
+      const response = await fetch("/api/applications") 
+      if (!response.ok) throw new Error("Failed to fetch applications")
       const data = await response.json()
       setApplications(data)
     } catch (error) {
-      console.error("[v0] Failed to fetch applications:", error)
+      console.error("[ServicesContent] Failed to fetch applications:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchApplications()
+  }, [fetchApplications])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setSubmitting(true)
 
+    if (Object.values(formData).some((value) => !value)) {
+      toast({
+        title: "Error",
+        description: "Please fill out all fields.",
+        variant: "destructive",
+      })
+      setSubmitting(false)
+      return
+    }
+
     try {
       const response = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          submittedAt: new Date().toISOString(),
+          status: "Pending",
+        }),
       })
 
       if (response.ok) {
         toast({
           title: "Application Submitted",
-          description: "Your document application has been submitted successfully.",
+          description:
+            "Your document application has been submitted successfully.",
         })
-        setFormData({
-          fullName: "",
-          address: "",
-          contactNumber: "",
-          documentType: "",
-          purpose: "",
-        })
+        setFormData(initialFormData) // Reset form
         fetchApplications()
       } else {
         throw new Error("Failed to submit application")
       }
     } catch (error) {
+      console.error(error)
       toast({
         title: "Error",
         description: "Failed to submit application. Please try again.",
@@ -145,10 +123,11 @@ export function ServicesContent() {
     }
   }
 
+  // Realtime hook is fine here
   useRealtime({
     eventTypes: ["application:updated"],
-    onUpdate: (data) => {
-      console.log("[v0] Received application update:", data)
+    onUpdate: () => {
+      console.log("Received application update. Refreshing...")
       fetchApplications()
     },
   })
@@ -162,150 +141,45 @@ export function ServicesContent() {
           <TabsTrigger value="status">Track Application</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="documents">
+        {/* Documents Tab */}
+        <AnimatedTabsContent value="documents">
           <div className="space-y-6">
-            <div>
+            <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
               <h2 className="text-2xl font-bold mb-2">Barangay Documents</h2>
-              <p className="text-muted-foreground">View available documents, requirements, and pricing</p>
+              <p className="text-muted-foreground">
+                View available documents, requirements, and pricing
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {documentsInfo.map((doc) => (
-                <Card key={doc.id} className="hover:shadow-lg transition-shadow flex flex-col">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{doc.name}</CardTitle>
-                    <CardDescription>{doc.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex-1 space-y-4">
-                    <div>
-                      <h4 className="font-semibold text-sm mb-2">Requirements:</h4>
-                      <ul className="space-y-1">
-                        {doc.requirements.map((req, idx) => (
-                          <li key={idx} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <CheckIcon className="h-4 w-4 text-green-600" />
-                            {req}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Price:</span>
-                        <Badge variant="secondary" className="text-base">
-                          <DollarSign className="h-4 w-4 mr-1" />
-                          {doc.price === 0 ? "FREE" : `₱${doc.price}`}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {documentsInfo.map((doc, index) => (
+                <DocumentListCard key={doc.id} document={doc} index={index} />
               ))}
             </div>
           </div>
-        </TabsContent>
+        </AnimatedTabsContent>
 
-        <TabsContent value="apply">
+        {/* Apply Tab */}
+        <AnimatedTabsContent value="apply">
+            <DocumentApplicationForm
+                formData={formData}
+                submitting={submitting}
+                handleFormChange={handleFormChange}
+                handleSubmit={handleSubmit}
+            />
+        </AnimatedTabsContent>
+
+        {/* Status Tab */}
+        <AnimatedTabsContent value="status">
           <Card>
-            <CardHeader>
-              <CardTitle>Document Application Form</CardTitle>
-              <CardDescription>Fill out the form below to apply for barangay documents</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      placeholder="Juan Dela Cruz"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="contactNumber">Contact Number</Label>
-                    <Input
-                      id="contactNumber"
-                      type="tel"
-                      placeholder="+63-912-345-6789"
-                      value={formData.contactNumber}
-                      onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Input
-                    id="address"
-                    placeholder="123 Main Street, Barangay Matiao"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="documentType">Document Type</Label>
-                  <Select
-                    value={formData.documentType}
-                    onValueChange={(value) => setFormData({ ...formData, documentType: value })}
-                    required
-                  >
-                    <SelectTrigger id="documentType">
-                      <SelectValue placeholder="Select document type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {documentTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="purpose">Purpose</Label>
-                  <Textarea
-                    id="purpose"
-                    placeholder="Please state the purpose of your application..."
-                    value={formData.purpose}
-                    onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                    rows={4}
-                    required
-                  />
-                </div>
-
-                <Button type="submit" className="w-full" size="lg" disabled={submitting}>
-                  {submitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="mr-2 h-4 w-4" />
-                      Submit Application
-                    </>
-                  )}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="status">
-          <Card>
-            <CardHeader>
+            <CardHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
               <CardTitle>Your Applications</CardTitle>
-              <CardDescription>Track the status of your document applications</CardDescription>
+              <CardDescription>
+                Track the status of your document applications
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-4 animate-in fade-in-0 duration-700">
                   {[1, 2, 3].map((i) => (
                     <div key={i} className="animate-pulse border rounded-lg p-4">
                       <div className="h-4 bg-muted rounded w-3/4 mb-2" />
@@ -314,51 +188,29 @@ export function ServicesContent() {
                   ))}
                 </div>
               ) : applications.length === 0 ? (
-                <div className="text-center py-12">
+                <div className="text-center py-12 animate-in fade-in-0 duration-500">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No applications found</p>
-                  <p className="text-sm text-muted-foreground mt-2">Submit your first application to get started</p>
+                  <p className="text-muted-foreground">
+                    No applications found
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Submit your first application to get started
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {applications.map((application) => {
-                    const StatusIcon = statusIcons[application.status]
-                    return (
-                      <div key={application.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{application.documentType}</h3>
-                            <p className="text-sm text-muted-foreground">{application.fullName}</p>
-                          </div>
-                          <Badge className={statusColors[application.status]}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {application.status}
-                          </Badge>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <span className="text-muted-foreground">Purpose:</span>
-                            <p className="font-medium">{application.purpose}</p>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Submitted:</span>
-                            <p className="font-medium">
-                              {new Date(application.submittedAt).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                year: "numeric",
-                              })}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                  {applications.map((application, index) => (
+                    <ApplicationStatusCard
+                      key={application.id}
+                      application={application}
+                      index={index}
+                    />
+                  ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+        </AnimatedTabsContent>
       </Tabs>
     </div>
   )

@@ -2,11 +2,13 @@ import { NextResponse } from "next/server"
 import { persistentStore } from "@/lib/persistent-store"
 import { broadcastEvent } from "@/lib/event-broadcaster"
 
+// GET: Fetch all hotlines
 export async function GET() {
   const hotlines = await persistentStore.getHotlines()
   return NextResponse.json(hotlines)
 }
 
+// POST: Create a new hotline
 export async function POST(request: Request) {
   try {
     const body = await request.json()
@@ -27,14 +29,16 @@ export async function POST(request: Request) {
   }
 }
 
+// PUT: Update an existing hotline
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
     const hotlines = await persistentStore.getHotlines()
-    const index = hotlines.findIndex((h) => h.id === body.id)
+    const index = hotlines.findIndex((h: any) => h.id === body.id)
     if (index === -1) {
       return NextResponse.json({ error: "Hotline not found" }, { status: 404 })
     }
+    // Note: Assuming 'body' contains the fields to update, including 'category'
     hotlines[index] = { ...hotlines[index], ...body }
     await persistentStore.setHotlines(hotlines)
     await broadcastEvent("hotlines", {
@@ -47,6 +51,7 @@ export async function PUT(request: Request) {
   }
 }
 
+// DELETE: Delete a hotline by ID
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url)
@@ -55,7 +60,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID required" }, { status: 400 })
     }
     const hotlines = await persistentStore.getHotlines()
-    const index = hotlines.findIndex((h) => h.id === id)
+    const index = hotlines.findIndex((h: any) => h.id === id)
     if (index === -1) {
       return NextResponse.json({ error: "Hotline not found" }, { status: 404 })
     }

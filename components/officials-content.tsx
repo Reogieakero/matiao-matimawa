@@ -1,11 +1,13 @@
+// components/officials-content.tsx
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react" // Added useCallback
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Phone, User } from "lucide-react"
-import type { Official, OfficialStatus, OfficialCategory } from "@/lib/types"
+// Assuming your types file exists:
+import type { Official, OfficialStatus, OfficialCategory } from "@/lib/types" 
 import { useRealtime } from "@/hooks/use-realtime"
 import Image from "next/image"
 
@@ -21,33 +23,36 @@ export function OfficialsContent() {
   const [officials, setOfficials] = useState<Official[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchOfficials()
-  }, [])
-
-  const fetchOfficials = async () => {
+  const fetchOfficials = useCallback(async () => { // Wrapped in useCallback
     try {
       const response = await fetch("/api/officials")
       const data = await response.json()
       setOfficials(data)
     } catch (error) {
-      console.error("[v0] Failed to fetch officials:", error)
+      console.error("Failed to fetch officials:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, []) // Empty dependency array for fetchOfficials
 
+  useEffect(() => {
+    fetchOfficials()
+  }, [fetchOfficials])
+
+  // FIX: Removed the 'data' argument to match the useRealtime hook signature
   useRealtime({
     eventTypes: ["official:updated"],
-    onUpdate: (data) => {
-      console.log("[v0] Received official update:", data)
+    onUpdate: () => {
+      console.log("Received official update, refreshing data...")
       fetchOfficials()
     },
   })
 
+  // FIX: Added explicit types to the reduce callback parameters (acc and category)
   const groupedOfficials = officialCategories.reduce(
-    (acc, category) => {
-      acc[category] = officials.filter((official) => official.category === category)
+    (acc: Record<OfficialCategory, Official[]>, category: OfficialCategory) => {
+      // FIX: Added explicit type to the filter callback parameter (official)
+      acc[category] = officials.filter((official: Official) => official.category === category)
       return acc
     },
     {} as Record<OfficialCategory, Official[]>,
@@ -76,11 +81,11 @@ export function OfficialsContent() {
 
   return (
     <div className="container mx-auto px-4 py-12 space-y-12">
-      {officialCategories.map((category) => (
+      {officialCategories.map((category: OfficialCategory) => (
         <div key={category} className="space-y-6">
           <h2 className="text-2xl font-bold border-b pb-3">{category}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {groupedOfficials[category].map((official) => (
+            {groupedOfficials[category].map((official: Official) => ( // Added type Official
               <Card key={official.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between mb-4">

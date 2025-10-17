@@ -1,8 +1,10 @@
+// hooks/use-realtime.ts
 "use client"
 
 import { useEffect, useRef } from "react"
 
 interface RealtimeOptions {
+  // onUpdate expects no arguments, matching its use: onUpdate?.()
   onUpdate?: () => void
   eventTypes?: string[]
   pollInterval?: number
@@ -10,7 +12,9 @@ interface RealtimeOptions {
 
 export function useRealtime({ onUpdate, eventTypes, pollInterval = 3000 }: RealtimeOptions = {}) {
   const lastTimestampsRef = useRef<Record<string, number>>({})
-  const intervalRef = useRef<NodeJS.Timeout>()
+  
+  // FIX: Initialize useRef with null or undefined to satisfy NodeJS.Timeout type
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     const checkForUpdates = async () => {
@@ -36,19 +40,18 @@ export function useRealtime({ onUpdate, eventTypes, pollInterval = 3000 }: Realt
         }
 
         if (hasUpdates) {
-          console.log("[v0] Updates detected, refreshing data...")
+          console.log("Updates detected, refreshing data...")
           onUpdate?.()
         }
       } catch (error) {
-        console.error("[v0] Error checking for updates:", error)
+        console.error("Error checking for updates:", error)
       }
     }
 
     // Initial check
     checkForUpdates()
 
-    // Poll for updates
-    intervalRef.current = setInterval(checkForUpdates, pollInterval)
+    intervalRef.current = setInterval(checkForUpdates, pollInterval) as unknown as NodeJS.Timeout 
 
     return () => {
       if (intervalRef.current) {
