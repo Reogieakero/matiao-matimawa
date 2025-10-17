@@ -265,7 +265,6 @@ export function ManageOfficials() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Manage Officials</h2>
-          <p className="text-muted-foreground">Add new officials or update existing information</p>
         </div>
         <Button onClick={() => (showForm ? resetForm() : handleAddNew())}>
           {showForm ? (

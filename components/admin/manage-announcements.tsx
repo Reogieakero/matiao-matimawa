@@ -173,7 +173,6 @@ export function ManageAnnouncements() {
   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <h2 className="text-3xl font-semibold text-primary">Manage Announcements</h2>
-          <p className="text-muted-foreground">Create, edit, or delete announcements</p>
         </motion.div>
 
         <motion.div whileHover={{ scale: 1.02 }} className="w-full sm:w-auto">

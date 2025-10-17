@@ -146,7 +146,6 @@ export function ManageHotlines() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Manage Hotlines</h2>
-          <p className="text-muted-foreground">Add, edit, and delete emergency hotlines</p>
         </div>
         <Button onClick={() => setShowForm(!showForm)}>
           <Plus className="h-4 w-4 mr-2" />
