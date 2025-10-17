@@ -4,39 +4,21 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { Edit, Loader2, User, Plus, Upload, X, Trash2 } from "lucide-react" // Added Trash2
+import { Loader2, Plus, X } from "lucide-react"
+import { OfficialCard } from "@/components/admin/official-card"
+import { OfficialForm } from "@/components/admin/official-form"
+import { OfficialDeleteDialog } from "@/components/admin/official-delete-dialog"
 import { useToast } from "@/hooks/use-toast"
 import type { Official, OfficialStatus, OfficialCategory } from "@/lib/types"
 import { addActivityLog } from "@/lib/activity-log"
-import Image from "next/image"
-
-// Imports for the Confirmation Dialog
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+// (Dialog and form moved to dedicated components)
 
 
 const statuses: OfficialStatus[] = ["On Duty", "On Leave", "On Site"]
 const officialCategories: OfficialCategory[] = ["Barangay Officials", "SK", "Staff"]
 
-const statusColors: Record<OfficialStatus, string> = {
-  "On Duty": "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  "On Leave": "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-  "On Site": "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-}
+// statusColors moved into OfficialCard for consistency
 
 export function ManageOfficials() {
   const [officials, setOfficials] = useState<Official[]>([])
@@ -50,12 +32,19 @@ export function ManageOfficials() {
   
   const { toast } = useToast()
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string
+    position: string
+    contact: string
+    status: OfficialStatus
+    category: OfficialCategory
+    imageUrl: string
+  }>({
     name: "",
     position: "",
     contact: "",
-    status: "" as OfficialStatus,
-    category: "" as OfficialCategory,
+    status: "On Duty",  // Set a default value
+    category: "Barangay Officials",  // Set a default value
     imageUrl: "",
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
@@ -241,8 +230,8 @@ export function ManageOfficials() {
       name: "",
       position: "",
       contact: "",
-      status: "" as OfficialStatus,
-      category: "" as OfficialCategory,
+      status: "On Duty",  // Reset to default value
+      category: "Barangay Officials",  // Reset to default value
       imageUrl: "",
     })
     setImageFile(null)
@@ -251,12 +240,16 @@ export function ManageOfficials() {
     setShowForm(false)
   }
 
-  const groupedOfficials = officialCategories.reduce(
+  const groupedOfficials = officialCategories.reduce<Record<OfficialCategory, Official[]>>(
     (acc, category) => {
       acc[category] = officials.filter((official) => official.category === category)
       return acc
     },
-    {} as Record<OfficialCategory, Official[]>,
+    {
+      "Barangay Officials": [],
+      "SK": [],
+      "Staff": [],
+    }
   )
 
   if (loading) {
@@ -290,169 +283,22 @@ export function ManageOfficials() {
       </div>
 
       {showForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? "Edit Official" : "Add New Official"}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="position">Position</Label>
-                  <Input
-                    id="position"
-                    value={formData.position}
-                    onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="contact">Contact</Label>
-                  <Input
-                    id="contact"
-                    type="tel"
-                    value={formData.contact}
-                    onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value) => setFormData({ ...formData, category: value as OfficialCategory })}
-                    required
-                  >
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {officialCategories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={formData.status}
-                    onValueChange={(value) => setFormData({ ...formData, status: value as OfficialStatus })}
-                    required
-                  >
-                    <SelectTrigger id="status">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {statuses.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Official Photo (Optional)</Label>
-                {imagePreview ? (
-                  <div className="relative w-full h-48 border rounded-lg overflow-hidden">
-                    <Image src={imagePreview || "/placeholder.svg"} alt="Preview" fill className="object-cover" />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute top-2 right-2"
-                      onClick={handleRemoveImage}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ) : (
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
-                    }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                  >
-                    <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drag and drop an image here, or click to browse
-                    </p>
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => e.target.files?.[0] && handleFileChange(e.target.files[0])}
-                      className="hidden"
-                      id="image-upload"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => document.getElementById("image-upload")?.click()}
-                    >
-                      Choose File
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Button type="submit">{editingId ? "Update Official" : "Add Official"}</Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <OfficialForm
+          formData={formData}
+          imagePreview={imagePreview}
+          isDragging={isDragging}
+          officialCategories={officialCategories}
+          statuses={statuses}
+          onChange={(patch) => setFormData((s) => ({ ...s, ...patch }))}
+          onFileChange={handleFileChange}
+          onRemoveImage={handleRemoveImage}
+          onSubmit={handleSubmit}
+          onCancel={resetForm}
+        />
       )}
 
       {/* Confirmation Dialog for Deletion */}
-      <AlertDialog open={!!deletingOfficial} onOpenChange={() => setDeletingOfficial(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the official{" "}
-              <span className="font-semibold text-primary">{deletingOfficial?.name}</span> and remove their data from the records.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4 mr-2" />
-              )}
-              {isDeleting ? "Deleting..." : "Delete Official"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <OfficialDeleteDialog openOfficial={deletingOfficial} isDeleting={isDeleting} onClose={() => setDeletingOfficial(null)} onConfirm={handleConfirmDelete} />
 
       {/* Display Officials */}
       {officialCategories.map((category) => (
@@ -460,50 +306,7 @@ export function ManageOfficials() {
           <h3 className="text-xl font-semibold border-b pb-2">{category}</h3>
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {groupedOfficials[category].map((official) => (
-              <Card key={official.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    {official.imageUrl ? (
-                      <div className="relative h-16 w-16 rounded-full overflow-hidden flex-shrink-0">
-                        <Image
-                          src={official.imageUrl || "/placeholder.svg"}
-                          alt={official.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : (
-                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                        <User className="h-8 w-8" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-lg mb-1 line-clamp-1">{official.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{official.position}</p>
-                      <p className="text-sm font-medium mb-2">{official.contact}</p>
-                      <Badge className={statusColors[official.status]}>{official.status}</Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="flex space-x-2">
-                    <Button size="sm" variant="outline" onClick={() => handleEdit(official)} className="flex-1">
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Button>
-                    {/* Delete Button - Triggers Confirmation Dialog */}
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => handleDeleteClick(official)}
-                      className="w-10 p-0"
-                      title={`Delete ${official.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              <OfficialCard key={official.id} official={official} onEdit={handleEdit} onDelete={handleDeleteClick} />
             ))}
           </div>
         </div>

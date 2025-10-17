@@ -1,5 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
+import Image from "next/image"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LogOut, Bell, Phone, Users, FileText, MessageSquare } from "lucide-react"
 import { logout } from "@/lib/auth"
@@ -32,8 +33,8 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-4 flex h-16 items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-lg">
-              BM
+            <div className="relative h-10 w-10 flex-shrink-0 rounded-full bg-primary overflow-hidden">
+              <Image src="/Matiao Logo.jpg" alt="Matiao Logo" fill className="object-cover" />
             </div>
             <div>
               <h1 className="font-bold text-lg leading-tight">Admin Panel</h1>

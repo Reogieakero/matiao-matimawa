@@ -289,7 +289,7 @@ export function ManageAnnouncements() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <b>{deleting?.title}</b>. This action cannot be undone.
+              This will permanently delete {deleting?.title}. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
