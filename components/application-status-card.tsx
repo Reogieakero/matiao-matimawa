@@ -24,7 +24,7 @@ export function ApplicationStatusCard({
     <div
       key={application.id}
       // Apply staggered fade-in animation
-      className="border rounded-lg p-4 hover:shadow-md transition-shadow transition-all duration-500 ease-out animate-in fade-in-0 slide-in-from-bottom-2"
+  className="border rounded-lg p-4 hover:shadow-md transition-shadow duration-500 ease-out animate-in fade-in-0 slide-in-from-bottom-2"
       style={{ animationDelay: `${index * 50}ms` }}
     >
       <div className="flex items-start justify-between mb-3">

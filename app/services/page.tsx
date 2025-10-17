@@ -7,10 +7,10 @@ export default function ServicesPage() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1">
-        <div className="bg-accent text-accent-foreground py-12">
-          <div className="container mx-auto px-4">
-            <h1 className="text-4xl font-bold mb-3">Document Services</h1>
-            <p className="text-lg text-accent-foreground/90">
+          <div className="bg-accent text-accent-foreground py-8 sm:py-12">
+            <div className="container mx-auto px-4 sm:px-6">
+              <h1 className="text-3xl sm:text-4xl font-bold mb-2 sm:mb-3">Document Services</h1>
+              <p className="text-base sm:text-lg text-accent-foreground/90">
               Apply for barangay documents and track your application status
             </p>
           </div>

@@ -1,27 +1,16 @@
 // components/services-content.tsx
 "use client"
 
-import type React from "react"
-import { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback } from "react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs"
-import { FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useRealtime } from "@/hooks/use-realtime"
-// Import Data and Components
 import { DocumentListCard } from "./document-list-card"
 import { DocumentApplicationForm } from "./document-application-form"
 import { ApplicationStatusCard } from "./application-status-card"
-import {
-  documentsInfo,
-  type DocumentApplication,
-  type DocumentApplicationStatus,
-} from "@/lib/service-data"
+import { documentsInfo, DocumentApplication } from "@/lib/service-data"
+import { FileText } from "lucide-react"
 
 // Initial Form State
 const initialFormData = {
@@ -33,13 +22,11 @@ const initialFormData = {
 }
 
 // Helper component for TabsContent animation
-const AnimatedTabsContent = ({ value, children }: { value: string, children: React.ReactNode }) => (
-    <TabsContent value={value} 
-        // Added fade-in animation to Tab Content switch
-        className="mt-6 animate-in fade-in-0 duration-500">
-      {children}
-    </TabsContent>
-);
+const AnimatedTabsContent = ({ value, children }: { value: string; children: React.ReactNode }) => (
+  <TabsContent value={value} className="mt-6 animate-in fade-in-0 duration-500">
+    {children}
+  </TabsContent>
+)
 
 // --- Component ---
 export function ServicesContent() {
@@ -57,10 +44,9 @@ export function ServicesContent() {
   const fetchApplications = useCallback(async () => {
     setLoading(true)
     try {
-      // Simulate API delay for a better animation demonstration
-      await new Promise(resolve => setTimeout(resolve, 300)); 
-      // Replace with actual API call
-      const response = await fetch("/api/applications") 
+      // Simulate API delay for a nicer UI
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      const response = await fetch("/api/applications")
       if (!response.ok) throw new Error("Failed to fetch applications")
       const data = await response.json()
       setApplications(data)
@@ -103,8 +89,7 @@ export function ServicesContent() {
       if (response.ok) {
         toast({
           title: "Application Submitted",
-          description:
-            "Your document application has been submitted successfully.",
+          description: "Your document application has been submitted successfully.",
         })
         setFormData(initialFormData) // Reset form
         fetchApplications()
@@ -123,7 +108,7 @@ export function ServicesContent() {
     }
   }
 
-  // Realtime hook is fine here
+  // Realtime hook
   useRealtime({
     eventTypes: ["application:updated"],
     onUpdate: () => {
@@ -146,9 +131,7 @@ export function ServicesContent() {
           <div className="space-y-6">
             <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
               <h2 className="text-2xl font-bold mb-2">Barangay Documents</h2>
-              <p className="text-muted-foreground">
-                View available documents, requirements, and pricing
-              </p>
+              <p className="text-muted-foreground">View available documents, requirements, and pricing</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {documentsInfo.map((doc, index) => (
@@ -160,12 +143,12 @@ export function ServicesContent() {
 
         {/* Apply Tab */}
         <AnimatedTabsContent value="apply">
-            <DocumentApplicationForm
-                formData={formData}
-                submitting={submitting}
-                handleFormChange={handleFormChange}
-                handleSubmit={handleSubmit}
-            />
+          <DocumentApplicationForm
+            formData={formData}
+            submitting={submitting}
+            handleFormChange={handleFormChange}
+            handleSubmit={handleSubmit}
+          />
         </AnimatedTabsContent>
 
         {/* Status Tab */}
@@ -173,9 +156,7 @@ export function ServicesContent() {
           <Card>
             <CardHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
               <CardTitle>Your Applications</CardTitle>
-              <CardDescription>
-                Track the status of your document applications
-              </CardDescription>
+              <CardDescription>Track the status of your document applications</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -190,21 +171,13 @@ export function ServicesContent() {
               ) : applications.length === 0 ? (
                 <div className="text-center py-12 animate-in fade-in-0 duration-500">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    No applications found
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Submit your first application to get started
-                  </p>
+                  <p className="text-muted-foreground">No applications found</p>
+                  <p className="text-sm text-muted-foreground mt-2">Submit your first application to get started</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {applications.map((application, index) => (
-                    <ApplicationStatusCard
-                      key={application.id}
-                      application={application}
-                      index={index}
-                    />
+                    <ApplicationStatusCard key={application.id} application={application} index={index} />
                   ))}
                 </div>
               )}
