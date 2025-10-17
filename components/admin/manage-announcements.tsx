@@ -170,14 +170,14 @@ export function ManageAnnouncements() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
           <h2 className="text-3xl font-semibold text-primary">Manage Announcements</h2>
           <p className="text-muted-foreground">Create, edit, or delete announcements</p>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.05 }}>
-          <Button onClick={() => setShowForm(!showForm)} className="shadow-md">
+        <motion.div whileHover={{ scale: 1.02 }} className="w-full sm:w-auto">
+          <Button onClick={() => setShowForm(!showForm)} className="shadow-md w-full sm:w-auto">
             <Plus className="h-4 w-4 mr-2" /> {showForm ? "Close Form" : "New Announcement"}
           </Button>
         </motion.div>
@@ -234,7 +234,7 @@ export function ManageAnnouncements() {
 
                   <Label>Poster Image (Optional)</Label>
                   {posterPreview ? (
-                    <div className="relative h-56 border rounded-lg overflow-hidden">
+                    <div className="relative h-40 sm:h-56 border rounded-lg overflow-hidden">
                       <Image src={posterPreview} alt="Poster" fill className="object-cover" />
                       <Button
                         size="icon"
@@ -247,7 +247,7 @@ export function ManageAnnouncements() {
                     </div>
                   ) : (
                     <div
-                      className={`border-2 border-dashed rounded-lg p-8 text-center transition ${
+                      className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition ${
                         isDragging ? "border-primary bg-primary/5" : "border-muted-foreground/25"
                       }`}
                       onDragOver={(e) => {
@@ -334,12 +334,12 @@ export function ManageAnnouncements() {
                 <p className="text-xs text-muted-foreground mt-2">📅 {new Date(a.date).toLocaleDateString()}</p>
               </CardHeader>
               <CardContent className="pt-0">
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleEdit(a)}
-                    className="flex-1 hover:bg-blue-50 transition"
+                    className="w-full sm:flex-1 hover:bg-blue-50 transition"
                   >
                     <Edit className="h-4 w-4 mr-1" /> Edit
                   </Button>
@@ -347,7 +347,7 @@ export function ManageAnnouncements() {
                     size="sm"
                     variant="destructive"
                     onClick={() => setDeleting(a)}
-                    className="flex-1"
+                    className="w-full sm:flex-1"
                   >
                     <Trash2 className="h-4 w-4 mr-1" /> Delete
                   </Button>

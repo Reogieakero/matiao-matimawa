@@ -10,7 +10,9 @@ import { DocumentListCard } from "./document-list-card"
 import { DocumentApplicationForm } from "./document-application-form"
 import { ApplicationStatusCard } from "./application-status-card"
 import { documentsInfo, DocumentApplication } from "@/lib/service-data"
-import { FileText } from "lucide-react"
+import { FileText, ClipboardList, PenSquare, SearchCheck, ChevronRight, ChevronLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // Initial Form State
 const initialFormData = {
@@ -117,26 +119,107 @@ export function ServicesContent() {
     },
   })
 
+  const isMobile = useIsMobile()
+  const [activeTab, setActiveTab] = useState("documents")
+
+  // Navigation helper
+  const handleTabChange = (value: string) => {
+    setActiveTab(value)
+  }
+
   return (
-    <div className="container mx-auto px-4 py-12">
-      <Tabs defaultValue="documents" className="max-w-6xl mx-auto">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="documents">Available Documents</TabsTrigger>
-          <TabsTrigger value="apply">Apply for Document</TabsTrigger>
-          <TabsTrigger value="status">Track Application</TabsTrigger>
-        </TabsList>
+    <>
+      
+
+      {/* Main content */}
+      <div className="container max-w-7xl mx-auto px-4 py-8">
+        <Tabs defaultValue="documents" value={activeTab} onValueChange={handleTabChange} className="mx-auto">
+          {/* Process steps (hidden on small screens) */}
+          <div className="hidden sm:flex justify-center gap-16 mb-12">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => handleTabChange("documents")}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleTabChange("documents")}
+              className="flex flex-col items-center cursor-pointer focus:outline-none"
+            >
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                  activeTab === "documents" ? "bg-blue-600 text-white" : "bg-gray-100"
+                }`}>
+                  <ClipboardList className="h-6 w-6" />
+                </div>
+                <div className="text-sm">1. Browse Documents</div>
+              </div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => handleTabChange("apply")}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleTabChange("apply")}
+              className="flex flex-col items-center cursor-pointer focus:outline-none"
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                activeTab === "apply" ? "bg-blue-600 text-white" : "bg-gray-100"
+              }`}>
+                <PenSquare className="h-6 w-6" />
+              </div>
+              <div className="text-sm">2. Apply</div>
+            </div>
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => handleTabChange("status")}
+              onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleTabChange("status")}
+              className="flex flex-col items-center cursor-pointer focus:outline-none"
+            >
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
+                activeTab === "status" ? "bg-blue-600 text-white" : "bg-gray-100"
+              }`}>
+                <SearchCheck className="h-6 w-6" />
+              </div>
+              <div className="text-sm">3. Track Status</div>
+            </div>
+          </div>
+
+        {/* Tabs removed — top step icons act as navigation controls now */}
 
         {/* Documents Tab */}
         <AnimatedTabsContent value="documents">
-          <div className="space-y-6">
-            <div className="animate-in fade-in-0 slide-in-from-top-4 duration-500">
+          <div className="space-y-8">
+                        <div className="max-w-3xl mx-auto mb-8">
               <h2 className="text-2xl font-bold mb-2">Barangay Documents</h2>
-              <p className="text-muted-foreground">View available documents, requirements, and pricing</p>
+              <p className="text-gray-600 mb-4">
+                Browse through our available documents, view requirements, and check processing fees
+              </p>
+              <div className="flex items-center gap-6 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                  <ClipboardList className="h-5 w-5 text-blue-600" />
+                  <span>Choose a document from the list below</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <PenSquare className="h-5 w-5 text-blue-600" />
+                  <span>Click "Apply for Document" when ready</span>
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {documentsInfo.map((doc, index) => (
-                <DocumentListCard key={doc.id} document={doc} index={index} />
+                <DocumentListCard 
+                  key={doc.id} 
+                  document={doc} 
+                  index={index} 
+                  className="hover:shadow-lg transition-shadow"
+                />
               ))}
+            </div>
+            <div className="flex justify-center pt-4">
+              <Button
+                onClick={() => handleTabChange("apply")}
+                className="group"
+                size="lg"
+              >
+                <span>Apply for Document</span>
+                <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+              </Button>
             </div>
           </div>
         </AnimatedTabsContent>
@@ -153,29 +236,50 @@ export function ServicesContent() {
 
         {/* Status Tab */}
         <AnimatedTabsContent value="status">
-          <Card>
-            <CardHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300">
-              <CardTitle>Your Applications</CardTitle>
-              <CardDescription>Track the status of your document applications</CardDescription>
+          <Card className="border-0 sm:border shadow-none sm:shadow">
+            <CardHeader className="animate-in fade-in-0 slide-in-from-top-2 duration-300 px-3 sm:px-6">
+              <CardTitle className="text-xl sm:text-2xl">Your Applications</CardTitle>
+              <CardDescription className="text-base">Track the status of your document applications</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="px-3 sm:px-6">
               {loading ? (
-                <div className="space-y-4 animate-in fade-in-0 duration-700">
+                <div className="space-y-3 sm:space-y-4 animate-in fade-in-0 duration-700">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse border rounded-lg p-4">
-                      <div className="h-4 bg-muted rounded w-3/4 mb-2" />
-                      <div className="h-3 bg-muted rounded w-1/2" />
+                    <div key={i} className="animate-pulse border rounded-lg p-4 sm:p-6">
+                      <div className="flex items-center space-x-3 sm:space-x-4 mb-4">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 bg-muted rounded-full flex-shrink-0" />
+                        <div className="space-y-2 flex-1 min-w-0">
+                          <div className="h-4 bg-muted rounded w-3/4" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="h-3 bg-muted/50 rounded w-full" />
+                        <div className="h-3 bg-muted/50 rounded w-4/5" />
+                      </div>
                     </div>
                   ))}
                 </div>
               ) : applications.length === 0 ? (
-                <div className="text-center py-12 animate-in fade-in-0 duration-500">
-                  <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No applications found</p>
-                  <p className="text-sm text-muted-foreground mt-2">Submit your first application to get started</p>
+                <div className="text-center py-12 sm:py-16 animate-in fade-in-0 duration-500">
+                  <div className="rounded-full bg-muted/10 p-4 inline-flex mb-4 sm:mb-6">
+                    <FileText className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-medium mb-2">No Applications Yet</h3>
+                  <p className="text-muted-foreground text-sm sm:text-base max-w-sm mx-auto mb-6">
+                    Start by submitting your first document application. We'll help you track its progress here.
+                  </p>
+                  <Button
+                    onClick={() => handleTabChange("apply")}
+                    className="inline-flex items-center gap-2"
+                    size="lg"
+                  >
+                    Apply for Document
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </Button>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4 animate-in fade-in-0 duration-500">
                   {applications.map((application, index) => (
                     <ApplicationStatusCard key={application.id} application={application} index={index} />
                   ))}
@@ -186,5 +290,6 @@ export function ServicesContent() {
         </AnimatedTabsContent>
       </Tabs>
     </div>
+    </>
   )
 }

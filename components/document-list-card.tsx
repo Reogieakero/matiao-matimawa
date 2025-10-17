@@ -11,11 +11,14 @@ import type { Document } from "@/lib/service-data"
 interface DocumentListCardProps {
   document: Document
   index?: number
+  className?: string
 }
 
-export function DocumentListCard({ document, index = 0 }: DocumentListCardProps) {
+export function DocumentListCard({ document, index = 0, className }: DocumentListCardProps) {
   return (
-    <Card className="hover:shadow-lg transition-shadow flex flex-col animate-in fade-in-0 slide-in-from-top-4 duration-500 h-full" style={{ animationDelay: `${index * 75}ms` }}>
+    <Card 
+      className={`hover:shadow-lg transition-shadow flex flex-col animate-in fade-in-0 slide-in-from-top-4 duration-500 h-full ${className || ''}`}
+      style={{ animationDelay: `${index * 75}ms` }}>
       <CardHeader>
         <CardTitle className="text-lg">{document.name}</CardTitle>
         <CardDescription>{document.description}</CardDescription>
