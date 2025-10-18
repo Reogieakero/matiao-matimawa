@@ -97,11 +97,7 @@ export function AdminLogin({ onLogin }: AdminLoginProps) {
             </Button>
           </form>
 
-          <div className="mt-6 p-3 bg-muted rounded-md text-xs text-muted-foreground">
-            <p className="font-semibold mb-1">Demo Credentials:</p>
-            <p>Username: matiao</p>
-            <p>Password: barangay2025matiao</p>
-          </div>
+          
         </CardContent>
       </Card>
     </div>
